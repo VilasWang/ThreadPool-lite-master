@@ -24,7 +24,7 @@ struct gfun
 };
 
 class A
-{    //函数必须是 static 的才能使用线程池
+{
 public:
 	static int Afun(int n = 0)
 	{
@@ -43,7 +43,7 @@ int main()
 {
 	try
 	{
-#ifdef Test
+#if 0
 		std::threadpool pool(16);
 		std::future<void> ff = pool.start(fun1, 0);
 		std::future<int> fg = pool.start(gfun(), 0);
@@ -59,27 +59,15 @@ int main()
 		std::this_thread::sleep_for(std::chrono::seconds(3));
 
 		std::cout << " =======  fun1,55 ========= " << std::this_thread::get_id() << std::endl;
-		pool.start(fun1, 55).get();    //调用.get()获取返回值会等待线程执行完
+		pool.start(fun1, 55).get();
 
 		std::cout << "end... " << std::this_thread::get_id() << std::endl;
-#endif
+#else
 
-#ifdef Test
-		std::cout << " =======  sleep ========= " << std::this_thread::get_id() << std::endl;
-		std::this_thread::sleep_for(std::chrono::microseconds(500));
-
-		std::cout << " =======  commit all 1 begin ========= " << std::this_thread::get_id() << std::endl;
-		for (int i = 0; i < 50; i++)
-		{
-			pool.start(fun1, i * 100);
-		}
-		std::cout << " =======  commit all 1 end ========= " << std::this_thread::get_id() << " idlesize = " << pool.idleCount() << std::endl;
-#endif
-
-		std::cout << " =======  commit all 2 begin ========= " << std::this_thread::get_id() << std::endl;
+		std::cout << " =======  commit all begin ========= " << std::this_thread::get_id() << std::endl;
 		std::threadpool pool2(4);
 		std::vector< std::future<int> > results;
-		for (int i = 0; i < 8; ++i)
+		for (int i = 0; i < 50; ++i)
 		{
 			results.emplace_back(
 				pool2.start([i] {
@@ -90,13 +78,13 @@ int main()
 			})
 			);
 		}
-		std::cout << " =======  commit all 2 end ========= " << std::this_thread::get_id() << std::endl;
+		std::cout << " =======  commit all end ========= " << std::this_thread::get_id() << std::endl;
 
 		for (auto && result : results)
 		{
 			std::cout << "result: " << result.get() << std::endl;
 		}
-
+#endif
 
 		system("pause");
 		return 0;
