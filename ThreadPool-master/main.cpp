@@ -3,22 +3,22 @@
 #include <windows.h>
 
 
-void fun1(int slp)
+void fun1(int msc)
 {
 	printf("  hello, fun1 !  %d\n", std::this_thread::get_id());
-	if (slp > 0)
+	if (msc > 0)
 	{
-		printf(" ======= fun1 sleep %d  =========  %d\n", slp, std::this_thread::get_id());
-		std::this_thread::sleep_for(std::chrono::milliseconds(slp));
+		printf(" ======= fun1 sleep %d  =========  %d\n", msc, std::this_thread::get_id());
+		std::this_thread::sleep_for(std::chrono::milliseconds(msc));
 		//Sleep(slp );
 	}
 }
 
-struct gfun
+struct STfun
 {
 	int operator()(int n)
 	{
-		printf("%d  hello, gfun !  %d\n", n, std::this_thread::get_id());
+		printf("%d  hello, STfun !  %d\n", n, std::this_thread::get_id());
 		return 42;
 	}
 };
@@ -26,40 +26,52 @@ struct gfun
 class A
 {
 public:
-	static int Afun(int n = 0)
+	static std::string fun(int n, std::string str, char c)
 	{
-		std::cout << n << "  hello, Afun !  " << std::this_thread::get_id() << std::endl;
-		return n;
-	}
-
-	static std::string Bfun(int n, std::string str, char c)
-	{
-		std::cout << n << "  hello, Bfun !  " << str.c_str() << "  " << (int)c << "  " << std::this_thread::get_id() << std::endl;
+		std::cout << n << "  hello, A::fun !  " << str.c_str() << "  " << (int)c << "  " << std::this_thread::get_id() << std::endl;
 		return str;
 	}
 };
+
+
+template<class F, class... Args>
+auto funcWN(F&& f, Args&&... args) ->decltype(f(args...))
+{
+	return f(args...);
+}
 
 int main()
 {
 	try
 	{
-#if 0
+#if 1
+		using FUN = std::function<void(int)>;
+		auto fun2 = [](int msc) ->void {
+			printf("  hello, fun2 !  %d\n", std::this_thread::get_id()); 
+			if (msc > 0)
+			{
+				printf(" ======= fun2 sleep %d  =========  %d\n", msc, std::this_thread::get_id());
+				std::this_thread::sleep_for(std::chrono::milliseconds(msc));
+			}
+		};
+
+		//funcWN<FUN, int>(fun2, 500);
+
 		std::threadpool pool(16);
-		std::future<void> ff = pool.start(fun1, 0);
-		std::future<int> fg = pool.start(gfun(), 0);
-		std::future<std::string> gh = pool.start(A::Bfun, 9998, "multi args", 123);
+		std::future<void> ff = pool.start(fun2, 500);
+		std::future<int> fg = pool.start(STfun(), 0);
+		std::future<std::string> gh = pool.start(A::fun, 9998, "multi args", 123);
 		std::future<std::string> fh = pool.start([]()->std::string { std::cout << "hello, fh !  " << std::this_thread::get_id() << std::endl; return "hello,fh ret !"; });
 
-		std::cout << " =======  sleep ========= " << std::this_thread::get_id() << std::endl;
+		std::cout << " =======  sleep 3 s  ========= " << std::this_thread::get_id() << std::endl;
 		std::this_thread::sleep_for(std::chrono::seconds(3));
 
 		std::cout << fg.get() << "  " << fh.get().c_str() << "  " << std::this_thread::get_id() << std::endl;
 
-		std::cout << " =======  sleep ========= " << std::this_thread::get_id() << std::endl;
+		std::cout << " =======  sleep 3 s  ========= " << std::this_thread::get_id() << std::endl;
 		std::this_thread::sleep_for(std::chrono::seconds(3));
 
-		std::cout << " =======  fun1,55 ========= " << std::this_thread::get_id() << std::endl;
-		pool.start(fun1, 55).get();
+		std::cout << gh.get().c_str();
 
 		std::cout << "end... " << std::this_thread::get_id() << std::endl;
 #else
@@ -72,7 +84,7 @@ int main()
 			results.emplace_back(
 				pool2.start([i] {
 				std::cout << "hello " << i << std::endl;
-				std::this_thread::sleep_for(std::chrono::seconds(1));
+				std::this_thread::sleep_for(std::chrono::milliseconds(30));
 				std::cout << "world " << i << std::endl;
 				return i*i;
 			})

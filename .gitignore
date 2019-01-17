@@ -4,3 +4,12 @@
 
 *.suo
 /README.md.bak
+*.tlog
+*.obj
+*.idb
+*.log
+*.ilk
+*.pdb
+/Debug/ThreadPool-master.exe
+/ThreadPool-master.VC.db
+*.opendb

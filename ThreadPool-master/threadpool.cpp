@@ -18,18 +18,19 @@ threadpool::~threadpool()
 
 void threadpool::waitForDone()
 {
-	for (thread& thread : _pool)
+	for (thread& t : _pool)
 	{
-		if (thread.joinable())
-			thread.join();		// 等待任务结束， 前提：线程一定会执行完
+		if (t.joinable())
+			t.join();		// 等待任务结束， 前提：线程一定会执行完
 	}
 }
 
 void threadpool::detachAll()
 {
-	for (thread& thread : _pool)
+	for (thread& t : _pool)
 	{
-		thread.detach();		// 让线程“自生自灭”
+		if (t.joinable())
+			t.detach();		// 让线程“自生自灭”
 	}
 }
 
