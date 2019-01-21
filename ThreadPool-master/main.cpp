@@ -5,10 +5,10 @@
 
 void fun1(int msc)
 {
-	printf("  hello, fun1 !  %d\n", std::this_thread::get_id());
+	printf("  hello, fun1 !  %u\n", std::this_thread::get_id());
 	if (msc > 0)
 	{
-		printf(" ======= fun1 sleep %d  =========  %d\n", msc, std::this_thread::get_id());
+		printf(" ======= fun1 sleep %d ms  =========  %u\n", msc, std::this_thread::get_id());
 		std::this_thread::sleep_for(std::chrono::milliseconds(msc));
 		//Sleep(slp );
 	}
@@ -18,8 +18,8 @@ struct STfun
 {
 	int operator()(int n)
 	{
-		printf("%d  hello, STfun !  %d\n", n, std::this_thread::get_id());
-		return 42;
+		printf("%d  hello, STfun !  %u\n", n, std::this_thread::get_id());
+		return n;
 	}
 };
 
@@ -40,38 +40,36 @@ auto funcWN(F&& f, Args&&... args) ->decltype(f(args...))
 	return f(args...);
 }
 
+using FUN = std::function<void(int)>;
+auto fun2 = [](int msc) ->void {
+	printf("  hello, fun2 !  %u\n", std::this_thread::get_id());
+	if (msc > 0)
+	{
+		printf(" ======= fun2 sleep %d ms  =========  %u\n", msc, std::this_thread::get_id());
+		std::this_thread::sleep_for(std::chrono::milliseconds(msc));
+	}
+};
+
 int main()
 {
 	try
 	{
 #if 1
-		using FUN = std::function<void(int)>;
-		auto fun2 = [](int msc) ->void {
-			printf("  hello, fun2 !  %d\n", std::this_thread::get_id()); 
-			if (msc > 0)
-			{
-				printf(" ======= fun2 sleep %d  =========  %d\n", msc, std::this_thread::get_id());
-				std::this_thread::sleep_for(std::chrono::milliseconds(msc));
-			}
-		};
-
 		//funcWN<FUN, int>(fun2, 500);
 
 		std::threadpool pool(16);
-		std::future<void> ff = pool.start(fun2, 500);
-		std::future<int> fg = pool.start(STfun(), 0);
+		//std::future<void> ff = pool.start(fun2, 500);
+		//std::future<int> fg = pool.start(STfun(), 0);
 		std::future<std::string> gh = pool.start(A::fun, 9998, "multi args", 123);
-		std::future<std::string> fh = pool.start([]()->std::string { std::cout << "hello, fh !  " << std::this_thread::get_id() << std::endl; return "hello,fh ret !"; });
+		std::future<std::string> fh = pool.start([]()->std::string { 
+			std::cout << "hello, fh !  " << std::this_thread::get_id() << std::endl; 
+			return "hello, fh return !"; 
+		});
 
-		std::cout << " =======  sleep 3 s  ========= " << std::this_thread::get_id() << std::endl;
-		std::this_thread::sleep_for(std::chrono::seconds(3));
+		std::cout << fh.get().c_str() << "  " << std::this_thread::get_id() << std::endl;
 
-		std::cout << fg.get() << "  " << fh.get().c_str() << "  " << std::this_thread::get_id() << std::endl;
-
-		std::cout << " =======  sleep 3 s  ========= " << std::this_thread::get_id() << std::endl;
-		std::this_thread::sleep_for(std::chrono::seconds(3));
-
-		std::cout << gh.get().c_str();
+		std::cout << " =======  sleep 2 s  ========= " << std::this_thread::get_id() << std::endl;
+		std::this_thread::sleep_for(std::chrono::seconds(2));
 
 		std::cout << "end... " << std::this_thread::get_id() << std::endl;
 #else

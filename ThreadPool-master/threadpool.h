@@ -16,31 +16,32 @@ namespace std
 #define  THREADPOOL_MAX_NUM 16
 	//#define  THREADPOOL_AUTO_GROW
 
-	//线程池 (可以提交变参函数或lambda表达式的匿名函数执行, 可以阻塞获取返回值)
+	//线程池 (可以提交变参函数或lambda表达式的匿名函数执行, 可以同步获取返回值)
 	class threadpool
 	{
 	public:
-		threadpool(unsigned short size = 4);
+		explicit threadpool(unsigned short size = 4);
 		~threadpool();
 
 	public:
 		// 开始一个任务（若有空闲线程，立即执行，否则，加入等待队列）
 		// 返回值类型std::future<T>
-		// 调用std::future<T>.get()阻塞等待任务执行完获取返回值
+		// 调用std::future<T>.get()，阻塞等待任务执行完获取返回值
 		// 有两种方法可以实现调用类成员:
-		// 一种是使用	std::bind： std::threadpool.start(std::bind(&Dog::sayHello, &dog));
-		// 一种是用   std::mem_fn： std::threadpool.start(std::mem_fn(&Dog::sayHello), this)
+		// 一种是使用	std::bind	： std::threadpool.start(std::bind(&Car::run, &car));
+		// 一种是使用    std::mem_fn	： std::threadpool.start(std::mem_fn(&Car::run), &car)
 		template<class F, class... Args>
 		auto start(F&& f, Args&&... args) ->future<decltype(f(args...))>
 		{
-			if (!_running)    // stoped ??
-				throw runtime_error("commit on ThreadPool is stopped.");
+			if (!_running)
+				throw runtime_error("start on std::threadpool is stopped.");
 
 			using RetType = decltype(f(args...)); // typename std::result_of<F(Args...)>::type
 			auto task = make_shared<packaged_task<RetType()>>(
 				bind(forward<F>(f), forward<Args>(args)...)
 				);
 
+			//std::cout << task << std::endl;
 			//std::cout << typeid(task).name() << std::endl;
 
 			future<RetType> future = task->get_future();
